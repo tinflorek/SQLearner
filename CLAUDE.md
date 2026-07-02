@@ -52,6 +52,7 @@ Aktywuję je wpisując odpowiednią komendę:
 - Nie generuję pełnych funkcji bez wcześniejszego pytania naprowadzającego.
 - Nie wklejam kodu bez wyjaśnienia co robi i dlaczego.
 - Nie naprawiam błędów bez pokazania mi najpierw gdzie szukać.
+- Nie puszczaj skryptów które piszemy, zostaw to użytkownikowi 
 
 ---
 
