@@ -1,25 +1,39 @@
 import sqlite3
 import os 
 
+class NoResultSetError(Exception):
+    pass
+
 def build_sandbox(table_query, insert_query):
 
-    sqliteConnection = sqlite3.connect(':memory:')
-    cursor = sqliteConnection.cursor()
+    sqlite_connection = sqlite3.connect(':memory:')
+    cursor = sqlite_connection.cursor()
 
-    for table in table_query:
-        cursor.execute(table)
+    try:
+        for table in table_query:
+            cursor.execute(table)
 
-    for insert in insert_query:
-        cursor.execute(insert)
+        for insert in insert_query:
+            cursor.execute(insert)
+    except sqlite3.Error as e:
+        sqlite_connection.close()
+        raise 
+    except Exception as e:
+        sqlite_connection.close()
+        raise
 
-    return sqliteConnection
+    return sqlite_connection
 
 def run_query(cursor, user_query):
 
     cursor.execute(user_query)
-    correct_columns = [desc[0] for desc in cursor.description]
 
-    return cursor.fetchall(), correct_columns
+    if cursor.description is None:
+        raise NoResultSetError("This is not a SELECT query — this is for reading data.")
+
+    columns = [desc[0] for desc in cursor.description]
+
+    return cursor.fetchall(), columns
 
 def compare_results(user_results, correct_results, order_matters):
     if order_matters:

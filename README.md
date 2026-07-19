@@ -23,7 +23,9 @@ runs it against a real database and checks whether the result matches.
    ordering matters (`order_matters=True`), and `sorted() == sorted()` when it does not.
 5. **Read-only sandbox.** A SQLite authorizer blocks mutating operations
    (`INSERT`/`UPDATE`/`DELETE`/`DROP`/`CREATE`/`ALTER`), so the user cannot corrupt the
-   task data. Read queries (including aggregate functions) work normally.
+   task data. Read queries (including aggregate functions) work normally. A query that
+   returns no result set at all is rejected with a `NoResultSetError` and an explanatory
+   message, instead of crashing the session.
 
 ## Stack
 
@@ -57,17 +59,21 @@ During a session:
 ## Project structure
 
 ```
-main.py       # conductor: user loop, presentation, answer validation
-ai.py         # task generation: Task model, system prompt, retry
-database.py   # engine: sandbox, query execution, comparison, authorizer
+main.py           # entry point / conductor: user loop, presentation, answer validation
+app/
+├── __init__.py
+├── ai.py         # task generation: Task model, system prompt, retry
+└── database.py   # engine: sandbox, query execution, comparison, authorizer
 ```
 
-- **`ai.py`** — the `Task` model (Pydantic), `generate_task()`, and `generate_valid_task()`
+- **`main.py`** — the entry point, kept at the root and deliberately separate from the
+  `app` package: it ties everything together, shows the tables and the task prompt, takes
+  the user's query, handles errors, and compares the result.
+- **`app/ai.py`** — the `Task` model (Pydantic), `generate_task()`, and `generate_valid_task()`
   (generation with validation and an attempt limit; returns a validated task + a ready sandbox).
-- **`database.py`** — `build_sandbox()`, `run_query()`, `compare_results()`,
-  `print_table()`, `clear_terminal()`, and `authorizer()` (write blocking).
-- **`main.py`** — ties it together: shows the tables and the task prompt, takes the
-  user's query, handles errors, and compares the result.
+- **`app/database.py`** — `build_sandbox()`, `run_query()`, `compare_results()`,
+  `print_table()`, `clear_terminal()`, `authorizer()` (write blocking), and the
+  `NoResultSetError` exception raised when a query returns no result set.
 
 ## Key architectural decisions
 

@@ -1,5 +1,5 @@
-from database import run_query, compare_results, print_table, clear_terminal, authorizer
-from ai import generate_valid_task
+from app.database import run_query, compare_results, print_table, clear_terminal, authorizer, NoResultSetError
+from app.ai import generate_valid_task
 import sqlite3
 
 
@@ -15,9 +15,6 @@ if __name__ == "__main__":
     correct_output, correct_columns = run_query(cursor, correct_query)
 
     connection.set_authorizer(authorizer)
-
-    #user_query = task.correct_query  # Replace this with the user's query input in a real scenario
-    #user_output = run_query(cursor, user_query)
     
     while True:
         clear_terminal()
@@ -42,18 +39,16 @@ if __name__ == "__main__":
             break
         
         try:
-            user_results = cursor.execute(user_query).fetchall()
+            user_results, user_columns = run_query(cursor, user_query)
 
-            if cursor.description is None:
-                print("\n❌ This is not a SELECT query — this is for reading data")
-                input("\nPress Enter to try again...")
-                continue
-
-            user_columns = [desc[0] for desc in cursor.description]
             print("\n--- Your result ---")
             print_table(user_results, user_columns)
         except sqlite3.DatabaseError as e:
             print(f"❌ SQL query error: {e}")
+            input("\nPress Enter to try again...")
+            continue
+        except NoResultSetError as e:
+            print(f"❌ {e}")
             input("\nPress Enter to try again...")
             continue
         

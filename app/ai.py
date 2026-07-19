@@ -3,7 +3,7 @@ import anthropic
 from pydantic import BaseModel
 from typing import Literal
 
-from database import build_sandbox, run_query
+from app.database import build_sandbox, run_query, NoResultSetError
 
 class Task(BaseModel):
     ddl: list[str]
@@ -50,12 +50,15 @@ def _validate_task(task: Task) -> sqlite3.Connection | None:
 
     cursor = connection.cursor()
     try:
-        results = run_query(cursor, task.correct_query)
+        results = run_query(cursor, task.correct_query)[0]
     except sqlite3.Error as e:
         print(f"Invalid reference query from the AI: {e}")
         connection.close()
         return None
-
+    except NoResultSetError as e:
+        print(f"{e}")
+        connection.close()
+        return None
     if not results:
         print("The reference query returned no rows.")
         connection.close()
